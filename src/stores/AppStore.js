@@ -308,9 +308,10 @@ export default types
     /**
      * Function to update regions(labels) visibility by the given score range
      */
-    function updateVisibility(e) {
+    function updateVisibility(interval) {
       const currCompletion = self.completionStore.selected;
-      currCompletion.regionStore.labelVisible(e);
+      currCompletion.interval = interval;
+      currCompletion.regionStore.labelVisible(interval);
     }
 
     return {

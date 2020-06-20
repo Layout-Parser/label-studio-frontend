@@ -27,6 +27,7 @@ const Completion = types
 
     loadedDate: types.optional(types.Date, new Date()),
     leadTime: types.maybeNull(types.number),
+    interval: types.optional(types.array(types.number), [0, 100]),
 
     //
     userGenerate: types.optional(types.boolean, true),
@@ -391,6 +392,7 @@ const Completion = types
       });
 
       self.regionStore.unselectAll();
+      self.regionStore.labelVisible(self.interval);
     },
   }));
 

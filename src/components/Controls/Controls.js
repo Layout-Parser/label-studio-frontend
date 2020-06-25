@@ -19,6 +19,7 @@ export default inject("store")(
 
     const { userGenerate, sentUserGenerate } = item;
     const { enableHotkeys, enableTooltips } = store.settings;
+    const { interval } = store.completionStore.selected;
 
     /**
      * Task information
@@ -86,11 +87,17 @@ export default inject("store")(
         );
       }
 
-      if ((userGenerate && !sentUserGenerate) || (store.explore && !userGenerate)) {
+      if (store.task) {
         confidenceSlider = (
           <div>
             <h4>Confidence Score Interval</h4>
-            <Slider range defaultValue={[0, 100]} style={{ width: "200px" }} onChange={store.updateVisibility} />
+            <Slider
+              range
+              key={item.id}
+              defaultValue={interval ? interval : [0, 100]}
+              style={{ width: "200px" }}
+              onChange={store.updateVisibility}
+            />
           </div>
         );
       }

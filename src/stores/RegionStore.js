@@ -118,7 +118,6 @@ export default types
 
     labelVisible(scoreRange) {
       self.regions.forEach(r => {
-        console.log(r);
         if (r.score < scoreRange[0] || r.score > scoreRange[1]) {
           r.hidden = true;
         } else {

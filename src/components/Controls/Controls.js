@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Tooltip, Slider } from "antd";
+import { Button, Tooltip, Slider, InputNumber } from "antd";
 import { observer, inject } from "mobx-react";
 import { RollbackOutlined, CheckOutlined, CheckCircleOutlined } from "@ant-design/icons";
 
@@ -87,13 +87,19 @@ export default inject("store")(
         );
       }
 
+      function formatter(value) {
+        return `${value}%`;
+      }
+
       if (store.task) {
         confidenceSlider = (
           <div>
-            <h4>Confidence Score Interval</h4>
+            <h4 display="inline">Confidence Score Interval</h4>
             <Slider
               range
               key={item.id}
+              step={0.01}
+              tipFormatter={formatter}
               defaultValue={interval ? interval : [0, 100]}
               style={{ width: "200px" }}
               onChange={store.updateVisibility}

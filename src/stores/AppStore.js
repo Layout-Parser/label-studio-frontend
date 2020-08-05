@@ -305,13 +305,63 @@ export default types
       completions && completions.forEach(c => addComp(c));
     }
 
-    /**
-     * Function to update regions(labels) visibility by the given score range
-     */
+    /** labels Filtering functions **/
+    // Update regions(labels) visibility by the given score range
     function updateVisibility(interval) {
       const currCompletion = self.completionStore.selected;
       currCompletion.interval = interval;
       currCompletion.regionStore.labelVisible(interval);
+    }
+
+    // Update the mode of filtering labels (i.e. score/quartile)
+    function updateFilterOpt(e) {
+      const currCompletion = self.completionStore.selected;
+      currCompletion.useQuartile = e.target.value === "quart";
+      if (e.target.value === "quart") {
+        currCompletion.selectedQ = [1, 1, 1, 1];
+        currCompletion.regionStore.quartileVisible([1, 1, 1, 1]);
+      } else {
+        currCompletion.interval = [0, 100];
+        currCompletion.regionStore.labelVisible([0, 100]);
+      }
+    }
+
+    // Update regions(labels) visibility by the given selected Quartiles
+    function updateQuartile(ind) {
+      const currCompletion = self.completionStore.selected;
+      let selectedQ = currCompletion.selectedQ;
+
+      // logic to avoid 2 disjoint ranges
+      if (selectedQ[ind] === 1) {
+        // try to deselect quartile
+        if (ind === 0 || ind === 3) selectedQ[ind] = 0;
+        else {
+          if (selectedQ[ind - 1] + selectedQ[ind + 1] === 2) {
+            for (let i = ind; i < selectedQ.length; i++) selectedQ[i] = 0;
+          } else {
+            selectedQ[ind] = 0;
+          }
+        }
+      } else {
+        // try to select quartile
+        let sum = 0;
+        for (let i = 0; i < selectedQ.length; i++) sum += selectedQ[i];
+        if (sum !== 0) {
+          if (ind === 0 && selectedQ[1] !== 1) {
+            for (let i = 0; i < selectedQ.length; i++) selectedQ[i] = 0;
+          } else if (ind === 3 && selectedQ[2] !== 1) {
+            for (let i = 0; i < selectedQ.length; i++) selectedQ[i] = 0;
+          } else {
+            if (!(selectedQ[ind - 1] === 1 || selectedQ[ind + 1] === 1)) {
+              for (let i = 0; i < selectedQ.length; i++) selectedQ[i] = 0;
+            }
+          }
+        }
+        selectedQ[ind] = 1;
+      }
+
+      currCompletion.selectedQ = selectedQ;
+      currCompletion.regionStore.quartileVisible(selectedQ);
     }
 
     return {
@@ -332,5 +382,7 @@ export default types
       toggleDescription,
 
       updateVisibility,
+      updateFilterOpt,
+      updateQuartile,
     };
   });

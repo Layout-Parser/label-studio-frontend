@@ -27,7 +27,11 @@ const Completion = types
 
     loadedDate: types.optional(types.Date, new Date()),
     leadTime: types.maybeNull(types.number),
+
+    // Boxes filtering
     interval: types.optional(types.array(types.number), [0, 100]),
+    selectedQ: types.optional(types.array(types.number), [1, 1, 1, 1]),
+    useQuartile: types.optional(types.boolean, false),
 
     //
     userGenerate: types.optional(types.boolean, true),
@@ -392,7 +396,11 @@ const Completion = types
       });
 
       self.regionStore.unselectAll();
-      self.regionStore.labelVisible(self.interval);
+      if (self.useQuartile) {
+        self.regionStore.quartileVisible(self.selectedQ);
+      } else {
+        self.regionStore.labelVisible(self.interval);
+      }
     },
   }));
 

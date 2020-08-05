@@ -116,9 +116,45 @@ export default types
       next && next.selectRegion();
     },
 
+    // boxes filtering function based on score
     labelVisible(scoreRange) {
       self.regions.forEach(r => {
         if (r.score < scoreRange[0] || r.score > scoreRange[1]) {
+          r.hidden = true;
+        } else {
+          r.hidden = false;
+        }
+      });
+    },
+
+    // boxes filtering function based on quartile
+    quartileVisible(selectedQ) {
+      let start = -1;
+      let len = 0;
+      for (let i = 0; i < selectedQ.length; i++) {
+        if (start === -1 && selectedQ[i] === 1) start = i;
+        len += selectedQ[i];
+      }
+
+      let scores = [];
+      self.regions.forEach(r => {
+        console.log("here", r);
+        scores.push(r.relativeX);
+      });
+
+      let lower = -1;
+      let upper = -1;
+      if (scores.length > 0) {
+        scores.sort(function(a, b) {
+          return a - b;
+        });
+        lower = scores[Math.max(Math.ceil((start / 4) * self.regions.length), 0)];
+        upper = scores[Math.max(Math.ceil(((start + len) / 4) * self.regions.length) - 1, 0)];
+        if (start === -1) lower = scores[scores.length - 1] + 1;
+      }
+
+      self.regions.forEach(r => {
+        if (r.relativeX < lower || r.relativeX > upper) {
           r.hidden = true;
         } else {
           r.hidden = false;

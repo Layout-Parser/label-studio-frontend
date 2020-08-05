@@ -359,9 +359,13 @@ export default types
         }
         selectedQ[ind] = 1;
       }
-
       currCompletion.selectedQ = selectedQ;
       currCompletion.regionStore.quartileVisible(selectedQ);
+    }
+
+    function shiftBoxesColor(event) {
+      const currCompletion = self.completionStore.selected;
+      currCompletion.regionStore.shiftColor(event.target.checked);
     }
 
     return {
@@ -384,5 +388,7 @@ export default types
       updateVisibility,
       updateFilterOpt,
       updateQuartile,
+
+      shiftBoxesColor,
     };
   });

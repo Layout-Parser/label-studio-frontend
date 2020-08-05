@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Tooltip, Slider, InputNumber, Radio } from "antd";
+import { Button, Tooltip, Slider, Radio, Checkbox } from "antd";
 import { observer, inject } from "mobx-react";
 import { RollbackOutlined, CheckOutlined, CheckCircleOutlined } from "@ant-design/icons";
 
@@ -20,6 +20,7 @@ export default inject("store")(
     const { userGenerate, sentUserGenerate } = item;
     const { enableHotkeys, enableTooltips } = store.settings;
     const { interval, useQuartile, selectedQ } = store.completionStore.selected;
+    const { hasMap } = store.completionStore.selected.regionStore;
 
     /**
      * Task information
@@ -42,6 +43,7 @@ export default inject("store")(
     let updateButton;
     let submitButton;
     let boxFilter;
+    let shiftColor;
 
     /**
      * Check for Predict Menu
@@ -149,7 +151,6 @@ export default inject("store")(
             </Button>
           </div>
         );
-        store.abc = false;
 
         boxFilter = (
           <div>
@@ -174,6 +175,12 @@ export default inject("store")(
             <div>{useQuartile ? QuartBtns : slider}</div>
           </div>
         );
+
+        shiftColor = (
+          <Checkbox onChange={store.shiftBoxesColor} checked={hasMap}>
+            Shift Color of Detected Objects
+          </Checkbox>
+        );
       }
       // Box filtering module ------------------------------------
     }
@@ -187,6 +194,7 @@ export default inject("store")(
             {submitButton}
           </div>
           {boxFilter}
+          {shiftColor}
           {taskInformation}
         </div>
       </div>

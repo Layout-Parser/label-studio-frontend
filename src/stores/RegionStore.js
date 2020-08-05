@@ -11,6 +11,9 @@ export default types
     sortOrder: types.optional(types.enumeration(["asc", "desc"]), "desc"),
 
     group: types.optional(types.enumeration(["type", "label"]), "type"),
+
+    colorMap: types.optional(types.map(types.string), {}),
+    hasMap: types.optional(types.boolean, false),
   })
   .views(self => ({
     get sortedRegions() {
@@ -138,8 +141,7 @@ export default types
 
       let scores = [];
       self.regions.forEach(r => {
-        console.log("here", r);
-        scores.push(r.relativeX);
+        scores.push(r.score);
       });
 
       let lower = -1;
@@ -154,11 +156,33 @@ export default types
       }
 
       self.regions.forEach(r => {
-        if (r.relativeX < lower || r.relativeX > upper) {
+        if (r.score < lower || r.score > upper) {
           r.hidden = true;
         } else {
           r.hidden = false;
         }
       });
+    },
+
+    shiftColor(toBeFill) {
+      if (toBeFill) {
+        self.hasMap = true;
+        self.regions.forEach(r => {
+          self.colorMap[r.id] = r.fillColor;
+          r.fillOpacity = 1;
+          r.opacity = 1;
+          r.fillColor = "#FF0000";
+        });
+      } else {
+        self.regions.forEach(r => {
+          if (self.colorMap[r.id] !== undefined) {
+            r.fillOpacity = 0.6;
+            r.opacity = 0.6;
+            r.fillColor = self.colorMap[r.id];
+          }
+        });
+        self.hasMap = false;
+        self.colorMap.clear();
+      }
     },
   }));

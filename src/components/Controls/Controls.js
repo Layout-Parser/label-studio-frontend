@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Tooltip, Slider, InputNumber } from "antd";
+import { Button, Tooltip, Slider, Radio, Checkbox } from "antd";
 import { observer, inject } from "mobx-react";
 import { RollbackOutlined, CheckOutlined, CheckCircleOutlined } from "@ant-design/icons";
 
@@ -19,7 +19,8 @@ export default inject("store")(
 
     const { userGenerate, sentUserGenerate } = item;
     const { enableHotkeys, enableTooltips } = store.settings;
-    const { interval } = store.completionStore.selected;
+    const { interval, useQuartile, selectedQ } = store.completionStore.selected;
+    const { hasMap } = store.completionStore.selected.regionStore;
 
     /**
      * Task information
@@ -41,7 +42,8 @@ export default inject("store")(
     let skipButton;
     let updateButton;
     let submitButton;
-    let confidenceSlider;
+    let boxFilter;
+    let shiftColor;
 
     /**
      * Check for Predict Menu
@@ -91,22 +93,96 @@ export default inject("store")(
         return `${value}%`;
       }
 
+      // Box filtering module ------------------------------------
       if (store.task) {
-        confidenceSlider = (
-          <div>
-            <h4 display="inline">Confidence Score Interval</h4>
-            <Slider
-              range
-              key={item.id}
-              step={0.01}
-              tipFormatter={formatter}
-              defaultValue={interval ? interval : [0, 100]}
-              style={{ width: "200px" }}
-              onChange={store.updateVisibility}
-            />
+        let slider = (
+          <Slider
+            range
+            key={item.id}
+            step={0.01}
+            tipFormatter={formatter}
+            defaultValue={interval ? interval : [0, 100]}
+            style={{ width: "200px", marginTop: "25px" }}
+            onChange={store.updateVisibility}
+          />
+        );
+
+        let QuartBtns = (
+          <div style={{ display: "inline-block" }}>
+            <Button
+              key={0}
+              type={selectedQ[0] === 1 ? "primary" : "default"}
+              style={{ borderRadius: 0, height: "25px", lineHeight: "20px", paddingTop: 0 }}
+              onClick={() => {
+                store.updateQuartile(0);
+              }}
+            >
+              Q1
+            </Button>
+            <Button
+              key={1}
+              type={selectedQ[1] === 1 ? "primary" : "default"}
+              style={{ borderRadius: 0, height: "25px", lineHeight: "20px", paddingTop: 0 }}
+              onClick={() => {
+                store.updateQuartile(1);
+              }}
+            >
+              Q2
+            </Button>
+            <Button
+              key={2}
+              type={selectedQ[2] === 1 ? "primary" : "default"}
+              style={{ borderRadius: 0, height: "25px", lineHeight: "20px", paddingTop: 0 }}
+              onClick={() => {
+                store.updateQuartile(2);
+              }}
+            >
+              Q3
+            </Button>
+            <Button
+              key={3}
+              type={selectedQ[3] === 1 ? "primary" : "default"}
+              style={{ borderRadius: 0, height: "25px", lineHeight: "20px", paddingTop: 0 }}
+              onClick={() => {
+                store.updateQuartile(3);
+              }}
+            >
+              Q4
+            </Button>
           </div>
         );
+
+        boxFilter = (
+          <div>
+            <div style={{ marginBottom: "10px" }}>
+              <Radio.Group defaultValue={useQuartile ? "quart" : "score"} buttonStyle="solid">
+                <Radio.Button
+                  value="quart"
+                  onChange={store.updateFilterOpt}
+                  style={{ height: "25px", lineHeight: "20px" }}
+                >
+                  Quartile
+                </Radio.Button>
+                <Radio.Button
+                  value="score"
+                  onChange={store.updateFilterOpt}
+                  style={{ height: "25px", lineHeight: "20px" }}
+                >
+                  Score
+                </Radio.Button>
+              </Radio.Group>
+            </div>
+            <div>{useQuartile ? QuartBtns : slider}</div>
+          </div>
+        );
+
+        shiftColor = (
+          <Checkbox onChange={store.shiftBoxesColor} checked={hasMap}>
+            Shift Color of Detected Objects
+          </Checkbox>
+        );
       }
+      // Box filtering module ------------------------------------
     }
 
     let content = (
@@ -117,7 +193,8 @@ export default inject("store")(
             {updateButton}
             {submitButton}
           </div>
-          {confidenceSlider}
+          {boxFilter}
+          {shiftColor}
           {taskInformation}
         </div>
       </div>

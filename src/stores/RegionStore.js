@@ -11,6 +11,9 @@ export default types
     sortOrder: types.optional(types.enumeration(["asc", "desc"]), "desc"),
 
     group: types.optional(types.enumeration(["type", "label"]), "type"),
+
+    colorMap: types.optional(types.map(types.string), {}),
+    hasMap: types.optional(types.boolean, false),
   })
   .views(self => ({
     get sortedRegions() {
@@ -116,6 +119,7 @@ export default types
       next && next.selectRegion();
     },
 
+    // boxes filtering function based on score
     labelVisible(scoreRange) {
       self.regions.forEach(r => {
         if (r.score < scoreRange[0] || r.score > scoreRange[1]) {
@@ -124,5 +128,61 @@ export default types
           r.hidden = false;
         }
       });
+    },
+
+    // boxes filtering function based on quartile
+    quartileVisible(selectedQ) {
+      let start = -1;
+      let len = 0;
+      for (let i = 0; i < selectedQ.length; i++) {
+        if (start === -1 && selectedQ[i] === 1) start = i;
+        len += selectedQ[i];
+      }
+
+      let scores = [];
+      self.regions.forEach(r => {
+        scores.push(r.score);
+      });
+
+      let lower = -1;
+      let upper = -1;
+      if (scores.length > 0) {
+        scores.sort(function(a, b) {
+          return a - b;
+        });
+        lower = scores[Math.max(Math.ceil((start / 4) * self.regions.length), 0)];
+        upper = scores[Math.max(Math.ceil(((start + len) / 4) * self.regions.length) - 1, 0)];
+        if (start === -1) lower = scores[scores.length - 1] + 1;
+      }
+
+      self.regions.forEach(r => {
+        if (r.score < lower || r.score > upper) {
+          r.hidden = true;
+        } else {
+          r.hidden = false;
+        }
+      });
+    },
+
+    shiftColor(toBeFill) {
+      if (toBeFill) {
+        self.hasMap = true;
+        self.regions.forEach(r => {
+          self.colorMap[r.id] = r.fillColor;
+          r.fillOpacity = 1;
+          r.opacity = 1;
+          r.fillColor = "#FF0000";
+        });
+      } else {
+        self.regions.forEach(r => {
+          if (self.colorMap[r.id] !== undefined) {
+            r.fillOpacity = 0.6;
+            r.opacity = 0.6;
+            r.fillColor = self.colorMap[r.id];
+          }
+        });
+        self.hasMap = false;
+        self.colorMap.clear();
+      }
     },
   }));

@@ -119,6 +119,119 @@ export default types
       next && next.selectRegion();
     },
 
+    // adjust size of selected object through w, a, s, d
+    adjustSize(option) {
+      const { regions } = self;
+      const idx = self.regions.findIndex(r => r.selected);
+      if (regions[idx] != undefined) {
+        let x = regions[idx].x;
+        let y = regions[idx].y;
+        let w = regions[idx].width;
+        let h = regions[idx].height;
+        if (option === "w") {
+          regions[idx].setPosition(x, y - 1, w, h + 1, 0);
+        } else if (option === "s") {
+          regions[idx].setPosition(x, y + 1, w, h - 1, 0);
+        } else if (option === "d") {
+          regions[idx].setPosition(x, y, w + 1, h, 0);
+        } else {
+          // option === 'a'
+          regions[idx].setPosition(x, y, w - 1, h, 0);
+        }
+      }
+    },
+
+    // adjust size of selected object through w, a, s, d
+    adjustPos(option) {
+      const { regions } = self;
+      const idx = self.regions.findIndex(r => r.selected);
+      if (regions[idx] != undefined) {
+        let x = regions[idx].x;
+        let y = regions[idx].y;
+        let w = regions[idx].width;
+        let h = regions[idx].height;
+        if (option === "up") {
+          regions[idx].setPosition(x, y - 1, w, h, 0);
+        } else if (option === "down") {
+          regions[idx].setPosition(x, y + 1, w, h, 0);
+        } else if (option === "left") {
+          regions[idx].setPosition(x - 1, y, w, h, 0);
+        } else {
+          // option === 'right'
+          regions[idx].setPosition(x + 1, y, w, h, 0);
+        }
+      }
+    },
+
+    // unselect current object, then select the right adjacent object
+    selectRightAdj() {
+      const { regions } = self;
+      const idx = regions.findIndex(r => r.selected);
+      if (idx === -1 || regions.length < 2) return;
+      regions[idx].unselectRegion();
+
+      let obs = [];
+      for (let i = 0; i < regions.length; i++) {
+        if (!regions.hidden) obs.push([i, regions[i].x, regions[i].id]);
+      }
+
+      obs.sort(function(ob1, ob2) {
+        if (ob1[1] > ob2[1]) return 1;
+        if (ob1[1] < ob2[1]) return -1;
+        // minor sort
+        if (ob1[2] > ob2[2]) return 1;
+        else return -1;
+      });
+
+      let start = regions[obs[0][0]];
+      let rightAdj = -1;
+
+      let passCurr = false;
+      for (let i = 0; i < obs.length; i++) {
+        if (obs[i][0] === idx) {
+          passCurr = true;
+          continue;
+        }
+        if (!passCurr) continue;
+        if (obs[i][1] >= regions[idx].x && obs[i][2] !== regions[idx].id) {
+          rightAdj = regions[obs[i][0]];
+          break;
+        }
+      }
+
+      // O(n) algo, but messy logic
+
+      // const currX = regions[idx].x;
+      // let rightAdj = -1;
+      // let rightDist = Number.MAX_VALUE;
+      // let start = -1;
+      // let minX = Number.MAX_VALUE;
+      // for (let i = 0; i < regions.length; i++) {
+      //   if (i !== idx && regions[i].x - currX >= 0 && regions[i].x - currX <= rightDist) {
+      //     // pick the one with smaller id when x coords are the same
+      //     if (regions[i].x - currX === rightDist && regions[i].id < rightAdj.id) {
+      //       rightAdj = regions[i];
+      //     } else { // regions[i].x - currX < rightDist
+      //       if (regions[i].x - currX !== 0 || regions[i].id > regions[idx].id) {
+      //         rightDist = regions[i].x - currX;
+      //         rightAdj = regions[i];
+      //       }
+      //     }
+      //   }
+      //   if (regions[i].x <= minX) {
+      //     if (regions[i].x === minX && regions[i].id < start.id) {
+      //       start = regions[i];
+      //     } else {
+      //       minX = regions[i].x;
+      //       start = regions[i];
+      //     }
+      //   }
+      // }
+
+      const next = rightAdj !== -1 ? rightAdj : start;
+      next && next.selectRegion();
+    },
+
     // boxes filtering function based on score
     labelVisible(scoreRange) {
       self.regions.forEach(r => {

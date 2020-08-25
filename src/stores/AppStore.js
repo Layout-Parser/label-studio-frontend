@@ -224,6 +224,87 @@ export default types
         "Circle through entities",
       );
 
+      Hotkey.addKey(
+        "a",
+        function() {
+          const c = self.completionStore.selected;
+          c && c.regionStore.adjustSize("a");
+        },
+        "Decrease selected object width",
+      );
+
+      Hotkey.addKey(
+        "d",
+        function() {
+          const c = self.completionStore.selected;
+          c && c.regionStore.adjustSize("d");
+        },
+        "Increase selected object width",
+      );
+
+      Hotkey.addKey(
+        "w",
+        function() {
+          const c = self.completionStore.selected;
+          c && c.regionStore.adjustSize("w");
+        },
+        "Increase selected object height",
+      );
+
+      Hotkey.addKey(
+        "s",
+        function() {
+          const c = self.completionStore.selected;
+          c && c.regionStore.adjustSize("s");
+        },
+        "Decrease selected object height",
+      );
+
+      Hotkey.addKey(
+        "ctrl+up",
+        function() {
+          const c = self.completionStore.selected;
+          c && c.regionStore.adjustPos("up");
+        },
+        "Move selected object upward",
+      );
+
+      Hotkey.addKey(
+        "ctrl+down",
+        function() {
+          const c = self.completionStore.selected;
+          c && c.regionStore.adjustPos("down");
+        },
+        "Move selected object downward",
+      );
+
+      Hotkey.addKey(
+        "ctrl+left",
+        function() {
+          const c = self.completionStore.selected;
+          c && c.regionStore.adjustPos("left");
+        },
+        "Move selected object leftward",
+      );
+
+      Hotkey.addKey(
+        "ctrl+right",
+        function() {
+          const c = self.completionStore.selected;
+          c && c.regionStore.adjustPos("right");
+        },
+        "Move selected object rightward",
+      );
+
+      Hotkey.addKey(
+        "enter",
+        function() {
+          const c = self.completionStore.selected;
+          c && c.regionStore.selectRightAdj();
+        },
+        "Select next object in right",
+      );
+
       getEnv(self).onLabelStudioLoad(self);
     }
 

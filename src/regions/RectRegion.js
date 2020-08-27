@@ -1,5 +1,5 @@
 import React, { Fragment } from "react";
-import { Rect, Group, Text, Label } from "react-konva";
+import { Rect } from "react-konva";
 import { observer, inject } from "mobx-react";
 import { types, getParentOfType, getParent, getRoot } from "mobx-state-tree";
 
@@ -43,6 +43,7 @@ const Model = types
     width: types.number,
     height: types.number,
 
+    // @todo not used
     scaleX: types.optional(types.number, 1),
     scaleY: types.optional(types.number, 1),
 
@@ -68,6 +69,8 @@ const Model = types
     coordstype: types.optional(types.enumeration(["px", "perc"]), "px"),
 
     supportsTransform: true,
+    // depends on region and object tag; they both should correctly handle the `hidden` flag
+    hideable: true,
   })
   .views(self => ({
     get store() {
@@ -101,9 +104,13 @@ const Model = types
     },
 
     rotate(degree) {
-      // self.rotation = self.rotation + degree;
+      const p = self.rotatePoint(self, degree);
+      if (degree === -90) p.y -= self.width;
+      if (degree === 90) p.x -= self.height;
+      self.setPosition(p.x, p.y, self.height, self.width, self.rotation);
     },
 
+    // @todo not used
     coordsInside(x, y) {
       // check if x and y are inside the rectangle
       const rx = self.x;
@@ -144,11 +151,7 @@ const Model = types
       self.relativeWidth = (width / self.parent.stageWidth) * 100;
       self.relativeHeight = (height / self.parent.stageHeight) * 100;
 
-      if (rotation < 0) {
-        self.rotation = (rotation % 360) + 360;
-      } else {
-        self.rotation = rotation % 360;
-      }
+      self.rotation = (rotation + 360) % 360;
     },
 
     setScale(x, y) {
@@ -189,14 +192,34 @@ const Model = types
       const value = control.serializableValue;
       if (!value) return null;
 
-      return {
-        original_width: object.naturalWidth,
-        original_height: object.naturalHeight,
-        value: {
-          x: (self.x * 100) / object.stageWidth,
-          y: (self.y * 100) / object.stageHeight,
+      const degree = (360 - self.parent.rotation) % 360;
+      let { x, y } = self.rotatePoint(self, degree, false);
+      if (degree === 270) y -= self.width;
+      if (degree === 90) x -= self.height;
+      if (degree === 180) {
+        x -= self.width;
+        y -= self.height;
+      }
+
+      const natural = self.rotateDimensions({ width: object.naturalWidth, height: object.naturalHeight }, degree);
+      const stage = self.rotateDimensions({ width: object.stageWidth, height: object.stageHeight }, degree);
+      const { width, height } = self.rotateDimensions(
+        {
           width: (self.width * (self.scaleX || 1) * 100) / object.stageWidth, //  * (self.scaleX || 1)
           height: (self.height * (self.scaleY || 1) * 100) / object.stageHeight,
+        },
+        degree,
+      );
+
+      return {
+        original_width: natural.width,
+        original_height: natural.height,
+        image_rotation: self.parent.rotation,
+        value: {
+          x: (x * 100) / stage.width,
+          y: (y * 100) / stage.height,
+          width,
+          height,
           rotation: self.rotation,
           ...value,
         },
@@ -265,7 +288,7 @@ const HtxRectangleView = ({ store, item }) => {
           );
           item.setScale(t.getAttr("scaleX"), t.getAttr("scaleY"));
         }}
-        dragBoundFunc={(pos, e) => {
+        dragBoundFunc={item.parent.fixForZoom(pos => {
           let { x, y } = pos;
           let { stageHeight, stageWidth } = getParent(item, 2);
 
@@ -281,11 +304,8 @@ const HtxRectangleView = ({ store, item }) => {
             y = stageHeight - item.height;
           }
 
-          return {
-            x: x,
-            y: y,
-          };
-        }}
+          return { x, y };
+        })}
         onMouseOver={e => {
           const stage = item.parent.stageRef;
 

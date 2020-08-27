@@ -14,6 +14,7 @@ export default types
 
     colorMap: types.optional(types.map(types.string), {}),
     hasMap: types.optional(types.boolean, false),
+    view: types.optional(types.enumeration(["regions", "labels"]), "regions"),
   })
   .views(self => ({
     get sortedRegions() {
@@ -26,6 +27,64 @@ export default types
       // TODO
       // return (self.sortOrder === 'asc') ? r.slice().reverse() : r;
     },
+
+    asTree(enrich) {
+      // every region has a parentID
+      // parentID is an empty string - "" if it's top level
+      // or it can contain a string key to the parent region
+      // [ { id: "1", parentID: "" }, { id: "2", parentID: "1" } ]
+      // would create a tree of two elements
+
+      const arr = self.regions;
+      const tree = [],
+        lookup = {};
+
+      arr.forEach((el, idx) => {
+        lookup[el.pid] = enrich(el, idx);
+        lookup[el.pid]["item"] = el;
+        lookup[el.pid]["children"] = [];
+      });
+
+      Object.keys(lookup).forEach(key => {
+        const el = lookup[key];
+        if (el["item"].parentID !== "") {
+          lookup[el["item"].parentID]["children"].push(el);
+        } else {
+          tree.push(el);
+        }
+      });
+
+      return tree;
+    },
+
+    asLabelsTree(enrich) {
+      // collect all label states into two maps
+      const labels = {};
+      const map = {};
+      self.regions.forEach(r => {
+        const l = r.labelsState;
+        if (l) {
+          const selected = l.selectedLabels;
+          selected &&
+            selected.forEach(s => {
+              labels[s._value] = s;
+              if (s._value in map) map[s._value].push(r);
+              else map[s._value] = [r];
+            });
+        }
+      });
+
+      // create the tree
+      let idx = 0;
+      const tree = Object.keys(labels).map(lname => {
+        const el = enrich(labels[lname], idx, true);
+        el["children"] = map[lname].map(r => enrich(r, idx++));
+
+        return el;
+      });
+
+      return tree;
+    },
   }))
   .actions(self => ({
     addRegion(region) {
@@ -36,6 +95,10 @@ export default types
     toggleSortOrder() {
       if (self.sortOrder === "asc") self.sortOrder = "desc";
       else self.sortOrder = "asc";
+    },
+
+    setView(view) {
+      self.view = view;
     },
 
     setSort(sort) {
@@ -55,6 +118,10 @@ export default types
     deleteRegion(region) {
       const arr = self.regions;
 
+      // find regions that have that region as a parent
+      const children = self.filterByParentID(region.pid);
+      children && children.forEach(r => r.setParentID(region.parentID));
+
       for (let i = 0; i < arr.length; i++) {
         if (arr[i] === region) {
           arr.splice(i, 1);
@@ -65,8 +132,16 @@ export default types
       self.initHotkeys();
     },
 
+    findRegionID(id) {
+      return self.regions.find(r => r.id === id);
+    },
+
     findRegion(pid) {
       return self.regions.find(r => r.pid === pid);
+    },
+
+    filterByParentID(id) {
+      return self.regions.filter(r => r.parentID === id);
     },
 
     afterCreate() {
@@ -123,7 +198,7 @@ export default types
     adjustSize(option) {
       const { regions } = self;
       const idx = self.regions.findIndex(r => r.selected);
-      if (regions[idx] != undefined) {
+      if (regions[idx] !== undefined) {
         let x = regions[idx].x;
         let y = regions[idx].y;
         let w = regions[idx].width;
@@ -145,7 +220,7 @@ export default types
     adjustPos(option) {
       const { regions } = self;
       const idx = self.regions.findIndex(r => r.selected);
-      if (regions[idx] != undefined) {
+      if (regions[idx] !== undefined) {
         let x = regions[idx].x;
         let y = regions[idx].y;
         let w = regions[idx].width;

@@ -35,6 +35,7 @@ import InfoModal from "../../components/Infomodal/Infomodal";
  * @param {string} [size=medium]            - size of text in the label
  * @param {string} [background]             - background color of an active label
  * @param {string} [selectedColor]          - color of text in an active label
+ * @param {symbol|word} [granularity]       - control per symbol or word selection (only for Text)
  */
 const TagAttrs = types.model({
   value: types.maybeNull(types.string),
@@ -47,6 +48,7 @@ const TagAttrs = types.model({
   size: types.optional(types.string, "medium"),
   background: types.optional(types.string, Constants.LABEL_BACKGROUND),
   selectedcolor: types.optional(types.string, "white"),
+  granularity: types.maybeNull(types.enumeration(["symbol", "word", "sentence", "paragraph"])),
 });
 
 const Model = types
@@ -124,7 +126,8 @@ const Model = types
         // unselect labels from other groups of labels connected to this obj
         self.completion.toNames
           .get(labels.toname)
-          .forEach(tag => tag.name !== labels.name && tag.unselectAll && tag.unselectAll());
+          .filter(tag => tag.type && tag.type.endsWith("labels") && tag.name !== labels.name)
+          .forEach(tag => tag.unselectAll && tag.unselectAll());
 
         // unselect other tools if they exist and selected
         const tool = Object.values(self.parent.tools || {})[0];
@@ -189,12 +192,7 @@ const Model = types
     },
   }));
 
-const LabelModel = types.compose(
-  "LabelModel",
-  TagAttrs,
-  Model,
-  ProcessAttrsMixin,
-);
+const LabelModel = types.compose("LabelModel", TagAttrs, Model, ProcessAttrsMixin);
 
 const HtxLabelView = inject("store")(
   observer(({ item, store }) => {

@@ -12,7 +12,6 @@ import { KeyPointRegionModel } from "../../regions/KeyPointRegion";
 import { PolygonRegionModel } from "../../regions/PolygonRegion";
 import { RectRegionModel } from "../../regions/RectRegion";
 import { EllipseRegionModel } from "../../regions/EllipseRegion";
-import InfoModal from "../../components/Infomodal/Infomodal";
 
 /**
  * Image tag shows an image on the page
@@ -295,6 +294,8 @@ const Model = types
 
     setStageRef(ref) {
       self.stageRef = ref;
+      // Konva updates ref repeatedly and this breaks brush scaling
+      if (self.initialWidth > 1) return;
       self.initialWidth = ref && ref.attrs && ref.attrs.width ? ref.attrs.width : 1;
       self.initialHeight = ref && ref.attrs && ref.attrs.height ? ref.attrs.height : 1;
     },
@@ -303,20 +304,32 @@ const Model = types
       self.selectedShape = shape;
     },
 
-    rotate(degree = 90) {
-      self.rotation = self.rotation + degree;
+    rotate(degree = -90) {
+      self.rotation = (self.rotation + degree + 360) % 360;
 
-      if (self.rotation === 360) {
-        self.rotation = 0;
-        degree = 0;
-      }
+      // 1. swap canvas sizes to correct relative calculations
+      const w = self.stageWidth;
+      self.stageWidth = self.stageHeight;
+      self.stageHeight = w;
+      const nw = self.naturalWidth;
+      self.naturalWidth = self.naturalHeight;
+      self.naturalHeight = nw;
 
+      const ratio = self.stageHeight / self.stageWidth;
+
+      // 2. rotate regions
       self.regions.forEach(s => s.rotate(degree));
+
+      // 3. scale to fit original width and resize all regions
+      self._updateImageSize({
+        width: w,
+        height: Math.round(ratio * w),
+        naturalWidth: self.naturalWidth,
+        naturalHeight: self.naturalHeight,
+      });
     },
 
-    updateImageSize(ev) {
-      const { width, height, naturalWidth, naturalHeight, userResize } = ev.target;
-
+    _updateImageSize({ width, height, naturalWidth, naturalHeight, userResize }) {
       if (naturalWidth !== undefined) {
         self.naturalWidth = naturalWidth;
         self.naturalHeight = naturalHeight;
@@ -329,6 +342,23 @@ const Model = types
       self.regions.forEach(shape => {
         shape.updateImageSize(width / naturalWidth, height / naturalHeight, width, height, userResize);
       });
+    },
+
+    updateImageSize(ev) {
+      const { width, height, naturalWidth, naturalHeight } = ev.target;
+      self.initialWidth = width;
+      self.initialHeight = height;
+      if ((self.rotation + 360) % 180 === 90) {
+        // swap sizes
+        self._updateImageSize({
+          width: height,
+          height: width,
+          naturalWidth: naturalHeight,
+          naturalHeight: naturalWidth,
+        });
+      } else {
+        self._updateImageSize({ width, height, naturalWidth, naturalHeight });
+      }
     },
 
     checkLabels() {
@@ -346,13 +376,38 @@ const Model = types
       shape.selectRegion();
     },
 
-    getEvCoords(ev) {
-      if (!ev.evt) return [];
+    // convert screen coords to image coords considering zoom
+    fixZoomedCoords([x, y]) {
+      return [(x - self.zoomingPositionX) / self.zoomScale, (y - self.zoomingPositionY) / self.zoomScale];
+      // good official way, but maybe a bit slower and with repeating cloning
+      // const p = self.stageRef.getAbsoluteTransform().copy().invert().point({ x, y });
+      // return [p.x, p.y];
+    },
 
-      const x = (ev.evt.offsetX - self.zoomingPositionX) / self.zoomScale;
-      const y = (ev.evt.offsetY - self.zoomingPositionY) / self.zoomScale;
+    // convert image coords to screen coords considering zoom
+    zoomOriginalCoords([x, y]) {
+      return [x * self.zoomScale + self.zoomingPositionX, y * self.zoomScale + self.zoomingPositionY];
+    },
 
-      return [x, y];
+    /**
+     * @typedef {[number, number]|{ x: number, y: number }} Point
+     */
+
+    /**
+     * Wrap point operations to convert zoomed coords from screen to image and back
+     * Good for event handlers, receiving screen coords, but working with image coords
+     * Accepts both [x, y] and {x, y} points; preserves this format
+     * @param {(point: Point) => Point} fn wrapped function do some math with image coords
+     * @return {(point: Point) => Point} outer function do some math with screen coords
+     */
+    fixForZoom(fn) {
+      return p => {
+        const asArray = p.x === undefined;
+        const [x, y] = self.fixZoomedCoords(asArray ? p : [p.x, p.y]);
+        const modified = fn(asArray ? [x, y] : { x, y });
+        const zoomed = self.zoomOriginalCoords(asArray ? modified : [modified.x, modified.y]);
+        return asArray ? zoomed : { x: zoomed[0], y: zoomed[1] };
+      };
     },
 
     /**
@@ -361,30 +416,11 @@ const Model = types
      * @param {*} height
      */
     onResize(width, height, userResize) {
-      self.stageHeight = height;
-      self.stageWidth = width;
-      self.updateImageSize({
-        target: { width: width, height: height, userResize: userResize },
-      });
+      self._updateImageSize({ width, height, userResize });
     },
 
-    onImageClick(ev) {
-      const coords = self.getEvCoords(ev);
-      self.getToolsManager().event("click", ev, ...coords);
-    },
-
-    onMouseDown(ev) {
-      const coords = self.getEvCoords(ev);
-      self.getToolsManager().event("mousedown", ev, ...coords);
-    },
-
-    onMouseMove(ev) {
-      const coords = self.getEvCoords(ev);
-      self.getToolsManager().event("mousemove", ev, ...coords);
-    },
-
-    onMouseUp(ev) {
-      self.getToolsManager().event("mouseup", ev);
+    event(name, ev, ...coords) {
+      self.getToolsManager().event(name, ev.evt || ev, ...self.fixZoomedCoords(coords));
     },
 
     /**

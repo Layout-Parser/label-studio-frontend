@@ -16,6 +16,10 @@ import { guidGenerator } from "../core/Helpers";
 const Completion = types
   .model("Completion", {
     id: types.identifier,
+    // @todo this value used `guidGenerator(5)` as default value before
+    // @todo but it calculates once, so all the completions have the same pk
+    // @todo why don't use only `id`?
+    // @todo reverted back to wrong type; maybe it breaks all the deserialisation
     pk: types.optional(types.string, guidGenerator(5)),
 
     selected: types.optional(types.boolean, false),
@@ -40,6 +44,7 @@ const Completion = types
     localUpdate: types.optional(types.boolean, false),
 
     honeypot: types.optional(types.boolean, false),
+    skipped: false,
 
     root: Types.allModelsTypes(),
     names: types.map(types.reference(Types.allModelsTypes())),
@@ -520,17 +525,17 @@ export default types
       //
       let root = modelClass.create(completionModel);
 
-      const id = options["id"];
-      delete options["id"];
+      const pk = String(options.pk || options.id);
 
       //
       let node = {
-        id: id || guidGenerator(5),
-        root: root,
-
         userGenerate: false,
 
         ...options,
+
+        id: guidGenerator(5),
+        pk,
+        root,
       };
 
       if (user && !("createdBy" in node)) node["createdBy"] = user.displayName;
@@ -562,11 +567,25 @@ export default types
       const c = self.addCompletion({ userGenerate: true });
       const s = prediction._initialCompletionObj;
 
+      const ids = {};
+
       // we need to iterate here and rename all ids, as those might
       // clash with the one in the prediction if used as a reference
       // somewhere
       s.forEach(r => {
-        if ("id" in r) r["id"] = guidGenerator();
+        if ("id" in r) {
+          const id = guidGenerator();
+          ids[r.id] = id;
+          r.id = id;
+        }
+      });
+
+      s.forEach(r => {
+        if (r.parent_id) {
+          if (ids[r.parent_id]) r.parent_id = ids[r.parent_id];
+          // impossible case but to not break the app better to reset it
+          else r.parent_id = null;
+        }
       });
 
       selectCompletion(c.id);

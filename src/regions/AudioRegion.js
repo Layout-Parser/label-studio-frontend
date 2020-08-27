@@ -10,7 +10,6 @@ import { TextAreaModel } from "../tags/control/TextArea";
 import { ChoicesModel } from "../tags/control/Choices";
 import { LabelsModel } from "../tags/control/Labels";
 import { guidGenerator } from "../core/Helpers";
-import Canvas from "../utils/canvas";
 import { RatingModel } from "../tags/control/Rating";
 
 const Model = types
@@ -166,12 +165,6 @@ const Model = types
     },
   }));
 
-const AudioRegionModel = types.compose(
-  "AudioRegionModel",
-  WithStatesMixin,
-  RegionsMixin,
-  NormalizationMixin,
-  Model,
-);
+const AudioRegionModel = types.compose("AudioRegionModel", WithStatesMixin, RegionsMixin, NormalizationMixin, Model);
 
 export { AudioRegionModel };

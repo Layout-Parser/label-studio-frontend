@@ -1,7 +1,7 @@
 import React, { Fragment } from "react";
 import { Ellipse } from "react-konva";
 import { observer, inject } from "mobx-react";
-import { types, getParentOfType, getParent, getRoot } from "mobx-state-tree";
+import { types, getParentOfType, getParent } from "mobx-state-tree";
 import WithStatesMixin from "../mixins/WithStates";
 import Constants from "../core/Constants";
 import DisabledMixin from "../mixins/Normalization";
@@ -10,7 +10,6 @@ import RegionsMixin from "../mixins/Regions";
 import Registry from "../core/Registry";
 import Utils from "../utils";
 import { ImageModel } from "../tags/object/Image";
-import { LabelsModel } from "../tags/control/Labels";
 import { RatingModel } from "../tags/control/Rating";
 import { EllipseLabelsModel } from "../tags/control/EllipseLabels";
 import { guidGenerator } from "../core/Helpers";
@@ -46,6 +45,7 @@ const Model = types
     radiusX: types.number,
     radiusY: types.number,
 
+    // @todo not used
     scaleX: types.optional(types.number, 1),
     scaleY: types.optional(types.number, 1),
 
@@ -71,6 +71,7 @@ const Model = types
     coordstype: types.optional(types.enumeration(["px", "perc"]), "px"),
 
     supportsTransform: true,
+    hideable: true,
   })
   .views(self => ({
     get parent() {
@@ -101,6 +102,7 @@ const Model = types
       self.fillColor = stroke;
     },
 
+    // @todo not used
     coordsInside(x, y) {
       // check if x and y are inside the rectangle
       const a = self.radiusX;
@@ -134,6 +136,11 @@ const Model = types
       self.completion.loadRegionState(self);
     },
 
+    rotate(degree) {
+      const p = self.rotatePoint(self, degree);
+      self.setPosition(p.x, p.y, self.radiusY, self.radiusX, self.rotation);
+    },
+
     /**
      * Boundg Box set position on canvas
      * @param {number} x
@@ -154,11 +161,7 @@ const Model = types
       self.relativeRadiusX = (radiusX / self.parent.stageWidth) * 100;
       self.relativeRadiusY = (radiusY / self.parent.stageHeight) * 100;
 
-      if (rotation < 0) {
-        self.rotation = (rotation % 360) + 360;
-      } else {
-        self.rotation = rotation % 360;
-      }
+      self.rotation = (rotation + 360) % 360;
     },
 
     setScale(x, y) {
@@ -196,14 +199,29 @@ const Model = types
     },
 
     serialize(control, object) {
+      const { naturalWidth, naturalHeight, stageWidth, stageHeight } = object;
+      const degree = -self.parent.rotation;
+      const natural = self.rotateDimensions({ width: naturalWidth, height: naturalHeight }, degree);
+      const { width, height } = self.rotateDimensions({ width: stageWidth, height: stageHeight }, degree);
+      const { width: radiusX, height: radiusY } = self.rotateDimensions(
+        {
+          width: (self.radiusX * (self.scaleX || 1) * 100) / object.stageWidth, //  * (self.scaleX || 1)
+          height: (self.radiusY * (self.scaleY || 1) * 100) / object.stageHeight,
+        },
+        degree,
+      );
+
+      const { x, y } = self.rotatePoint(self, degree, false);
+
       const res = {
-        original_width: object.naturalWidth,
-        original_height: object.naturalHeight,
+        original_width: natural.width,
+        original_height: natural.height,
+        image_rotation: self.parent.rotation,
         value: {
-          x: (self.x * 100) / object.stageWidth,
-          y: (self.y * 100) / object.stageHeight,
-          radiusX: (self.radiusX * (self.scaleX || 1) * 100) / object.stageWidth, //  * (self.scaleX || 1)
-          radiusY: (self.radiusY * (self.scaleY || 1) * 100) / object.stageHeight,
+          x: (x * 100) / width,
+          y: (y * 100) / height,
+          radiusX,
+          radiusY,
           rotation: self.rotation,
         },
       };
@@ -224,6 +242,8 @@ const EllipseRegionModel = types.compose(
 );
 
 const HtxEllipseView = ({ store, item }) => {
+  if (item.hidden) return null;
+
   let { strokeColor, strokeWidth } = item;
 
   if (item.highlighted) {
@@ -274,27 +294,24 @@ const HtxEllipseView = ({ store, item }) => {
           );
           item.setScale(t.getAttr("scaleX"), t.getAttr("scaleY"));
         }}
-        dragBoundFunc={(pos, e) => {
+        dragBoundFunc={item.parent.fixForZoom(pos => {
           let { x, y } = pos;
           let { stageHeight, stageWidth } = getParent(item, 2);
 
-          if (x <= 0) {
+          if (x < 0) {
             x = 0;
-          } else if (x + item.width >= stageWidth) {
-            x = stageWidth - item.width;
+          } else if (x > stageWidth) {
+            x = stageWidth;
           }
 
           if (y < 0) {
             y = 0;
-          } else if (y + item.height >= stageHeight) {
-            y = stageHeight - item.height;
+          } else if (y > stageHeight) {
+            y = stageHeight;
           }
 
-          return {
-            x: x,
-            y: y,
-          };
-        }}
+          return { x, y };
+        })}
         onMouseOver={e => {
           const stage = item.parent.stageRef;
 

@@ -3,7 +3,6 @@ import { types } from "mobx-state-tree";
 import BaseTool from "./Base";
 import ToolMixin from "../mixins/Tool";
 import { KeyPointRegionModel } from "../regions/KeyPointRegion";
-import { guidGenerator, restoreNewsnapshot } from "../core/Helpers";
 
 const _Tool = types
   .model({
@@ -53,11 +52,7 @@ const _Tool = types
     },
   }));
 
-const KeyPoint = types.compose(
-  ToolMixin,
-  BaseTool,
-  _Tool,
-);
+const KeyPoint = types.compose(ToolMixin, BaseTool, _Tool);
 
 // Registry.addTool("keypoint", KeyPoint);
 

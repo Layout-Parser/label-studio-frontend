@@ -126,6 +126,7 @@ const ToolMixin = types
         const moreParams = self.moreRegionParams(obj);
         const data = {
           pid: obj.id,
+          parentID: obj.parent_id === null ? "" : obj.parent_id,
           score: obj.score,
           readonly: obj.readonly,
           coordstype: "perc",
@@ -145,7 +146,7 @@ const ToolMixin = types
         // id, which might not be the case since it'd a good
         // practice to have unique ids
         const { regions } = self.obj;
-        r = regions.find(r => r.pid == obj.id);
+        r = regions.find(r => r.pid === obj.id);
 
         // r = self.findRegion(obj.value);
 

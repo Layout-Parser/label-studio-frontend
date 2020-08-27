@@ -2,7 +2,7 @@ import Konva from "konva";
 import React from "react";
 import { Group, Line } from "react-konva";
 import { observer, inject } from "mobx-react";
-import { types, getParentOfType, getRoot, destroy, detach } from "mobx-state-tree";
+import { types, getParentOfType, destroy, detach } from "mobx-state-tree";
 
 import Constants from "../core/Constants";
 import NormalizationMixin from "../mixins/Normalization";
@@ -50,6 +50,8 @@ const Model = types
 
     wp: types.maybeNull(types.number),
     hp: types.maybeNull(types.number),
+
+    hideable: true,
   })
   .views(self => ({
     get parent() {
@@ -58,6 +60,7 @@ const Model = types
   }))
   .actions(self => ({
     /**
+     * @todo excess method; better to handle click only on start point
      * Handler for mouse on start point of Polygon
      * @param {boolean} val
      */
@@ -65,6 +68,7 @@ const Model = types
       self.mouseOverStartPoint = value;
     },
 
+    // @todo not used
     setSelectedPoint(point) {
       if (self.selectedPoint) {
         self.selectedPoint.selected = false;
@@ -75,17 +79,15 @@ const Model = types
     },
 
     handleMouseMove({ e, flattenedPoints }) {
-      let { offsetX: cursorX, offsetY: cursorY } = e.evt;
-      let [x, y] = getAnchorPoint({ flattenedPoints, cursorX, cursorY });
+      const { offsetX, offsetY } = e.evt;
+      const [cursorX, cursorY] = self.parent.fixZoomedCoords([offsetX, offsetY]);
+      const [x, y] = getAnchorPoint({ flattenedPoints, cursorX, cursorY });
 
       const group = e.currentTarget;
       const layer = e.currentTarget.getLayer();
       const zoom = self.parent.zoomScale;
 
-      // TODO add the hover point only when in a non-zoomed mode,
-      // reason is the coords in zoom mode act weird, need to put in
-      // some time to find out why
-      if (zoom === 1) moveHoverAnchor({ point: [x, y], group, layer, zoom });
+      moveHoverAnchor({ point: [x, y], group, layer, zoom });
     },
 
     handleMouseLeave({ e }) {
@@ -99,7 +101,8 @@ const Model = types
 
       removeHoverAnchor({ layer: e.currentTarget.getLayer() });
 
-      const { offsetX: cursorX, offsetY: cursorY } = e.evt;
+      const { offsetX, offsetY } = e.evt;
+      const [cursorX, cursorY] = self.parent.fixZoomedCoords([offsetX, offsetY]);
       const point = getAnchorPoint({ flattenedPoints, cursorX, cursorY });
 
       self.insertPoint(insertIdx, point[0], point[1]);
@@ -133,6 +136,14 @@ const Model = types
       });
     },
 
+    // only px coordtype here
+    rotate(degree = -90) {
+      self.points.forEach(point => {
+        const p = self.rotatePoint(point, degree);
+        point._movePoint(p.x, p.y);
+      });
+    },
+
     closePoly() {
       self.closed = true;
       self.selectRegion();
@@ -142,10 +153,10 @@ const Model = types
       if (self.points.length < 2) return false;
 
       const p1 = self.points[0];
-      const p2 = { x: x, y: y };
+      const p2 = { x, y };
 
       var r = 50;
-      var dist_points = (p1["x"] - p2["x"]) * (p1["x"] - p2["x"]) + (p1["y"] - p2["y"]) * (p2["y"] - p2["y"]);
+      var dist_points = (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2;
 
       if (dist_points < r) {
         return true;
@@ -228,16 +239,14 @@ const Model = types
 
     serialize(control, object) {
       const { naturalWidth, naturalHeight, stageWidth, stageHeight } = object;
-
-      const perc_w = (stageWidth * 100) / naturalWidth;
-      const perc_h = (stageHeight * 100) / naturalHeight;
+      const degree = -self.parent.rotation;
+      const natural = self.rotateDimensions({ width: naturalWidth, height: naturalHeight }, degree);
+      const { width, height } = self.rotateDimensions({ width: stageWidth, height: stageHeight }, degree);
 
       const perc_points = self.points.map(p => {
-        const orig_w = (p.x * 100) / perc_w;
-        const res_w = (orig_w * 100) / naturalWidth;
-
-        const orig_h = (p.y * 100) / perc_h;
-        const res_h = (orig_h * 100) / naturalHeight;
+        const normalized = self.rotatePoint(p, degree, false);
+        const res_w = (normalized.x * 100) / width;
+        const res_h = (normalized.y * 100) / height;
 
         return [res_w, res_h];
       });
@@ -246,8 +255,9 @@ const Model = types
         value: {
           points: perc_points,
         },
-        original_width: naturalWidth,
-        original_height: naturalHeight,
+        original_width: natural.width,
+        original_height: natural.height,
+        image_rotation: self.parent.rotation,
       };
 
       res.value = Object.assign(res.value, control.serializableValue);
@@ -332,6 +342,8 @@ function removeHoverAnchor({ layer }) {
 }
 
 const HtxPolygonView = ({ store, item }) => {
+  if (item.hidden) return null;
+
   /**
    * Render line between 2 points
    */
@@ -443,7 +455,7 @@ const HtxPolygonView = ({ store, item }) => {
         [minX, maxX] = minMax(arrX);
         [minY, maxY] = minMax(arrY);
       }}
-      dragBoundFunc={function(pos) {
+      dragBoundFunc={item.parent.fixForZoom(pos => {
         let { x, y } = pos;
 
         const sw = item.parent.stageWidth;
@@ -455,7 +467,7 @@ const HtxPolygonView = ({ store, item }) => {
         if (maxX + x > sw) x = sw - maxX;
 
         return { x: x, y: y };
-      }}
+      })}
       onDragEnd={e => {
         const t = e.target;
 
@@ -501,7 +513,7 @@ const HtxPolygonView = ({ store, item }) => {
         item.setHighlight(false);
         item.onClickRegion();
       }}
-      draggable={item.editable && item.parent.zoomScale === 1}
+      draggable={item.editable}
     >
       {item.mouseOverStartPoint}
 

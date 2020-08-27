@@ -20,13 +20,13 @@ npm install label-studio
 
 ```xhtml
 <!-- Include Label Studio stylesheet -->
-<link href="https://unpkg.com/label-studio@0.7.1/build/static/css/main.0a1ce8ac.css" rel="stylesheet">
+<link href="https://unpkg.com/label-studio@0.7.3/build/static/css/main.09b8161e.css" rel="stylesheet">
 
 <!-- Create the Label Studio container -->
 <div id="label-studio"></div>
 
 <!-- Include the Label Studio library -->
-<script src="https://unpkg.com/label-studio@0.7.1/build/static/js/main.3ee35cc9.js"></script>
+<script src="https://unpkg.com/label-studio@0.7.3/build/static/js/main.e963e015.js"></script>
 
 <!-- Initialize Label Studio -->
 <script>
@@ -82,6 +82,7 @@ npm install label-studio
 1. Clone the repository
    ```bash
    git clone git@github.com:heartexlabs/label-studio-frontend.git
+   # or: git clone https://github.com/heartexlabs/label-studio-frontend.git
    cd label-studio-frontend
    ```
 

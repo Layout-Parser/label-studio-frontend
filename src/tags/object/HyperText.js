@@ -13,7 +13,6 @@ import { cloneNode } from "../../core/Helpers";
 import { guidGenerator, restoreNewsnapshot } from "../../core/Helpers";
 import { splitBoundaries } from "../../utils/html";
 import { runTemplate } from "../../core/Template";
-import InfoModal from "../../components/Infomodal/Infomodal";
 
 /**
  * HyperText tag shows an HyperText markup that can be labeled
@@ -24,10 +23,17 @@ import InfoModal from "../../components/Infomodal/Infomodal";
  * @param {string} value - value of the element
  * @param {boolean} [showLabels=false] - show labels next to the region
  * @param {string} [encoding=none|base64|base64unicode]  - decode value from encoded string
+ * @param {boolean} [clickableLinks=false] - allow to open resources from links
  */
 const TagAttrs = types.model("HyperTextModel", {
   name: types.maybeNull(types.string),
   value: types.maybeNull(types.string),
+
+  // @todo add `valueType=url` to HyperText and make autodetection of `savetextresult`
+  savetextresult: types.optional(types.enumeration(["none", "no", "yes"]), () =>
+    window.LS_SECURE_MODE ? "no" : "yes",
+  ),
+  clickablelinks: false,
 
   highlightcolor: types.maybeNull(types.string),
   showlabels: types.optional(types.boolean, false),
@@ -116,6 +122,7 @@ const Model = types
       const states = restoreNewsnapshot(fromModel);
       const tree = {
         pid: obj.id,
+        parentID: obj.parent_id === null ? "" : obj.parent_id,
         startOffset: startOffset,
         endOffset: endOffset,
         start: start,
@@ -230,12 +237,14 @@ class HyperTextPieceView extends Component {
       }
     });
 
-    Array.from(this.myRef.current.getElementsByTagName("a")).forEach(a => {
-      a.addEventListener("click", function(ev) {
-        ev.preventDefault();
-        return false;
+    if (!item.clickablelinks) {
+      Array.from(this.myRef.current.getElementsByTagName("a")).forEach(a => {
+        a.addEventListener("click", function(ev) {
+          ev.preventDefault();
+          return false;
+        });
       });
-    });
+    }
   }
 
   componentDidUpdate() {

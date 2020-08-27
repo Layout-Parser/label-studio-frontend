@@ -10,8 +10,10 @@ import ProductionEnvironment from "./env/production";
 if (process.env.NODE_ENV === "production") {
   const environment = ProductionEnvironment;
 
-  window.LabelStudio = (element, options) => {
+  window.LabelStudio = function(element, options) {
     let params = options;
+
+    if (params.options && params.options.secureMode) window.LS_SECURE_MODE = true;
 
     if (params && params.task) {
       params.task = environment.getData(params.task);
@@ -40,8 +42,10 @@ if (process.env.NODE_ENV === "production") {
 } else {
   const environment = require("./env/development").default;
 
-  window.LabelStudio = (element, options) => {
+  window.LabelStudio = function(element, options) {
     let params = options;
+
+    if (params.options && params.options.secureMode) window.LS_SECURE_MODE = true;
 
     // this is a way to initialize one of the examples from the src/examples section
     if (!options.config) {

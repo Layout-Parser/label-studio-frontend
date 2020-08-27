@@ -1,5 +1,5 @@
 import React, { Fragment } from "react";
-import { Popover, Select, Divider, List, Button, Dropdown, Menu } from "antd";
+import { Select, Divider, List, Button } from "antd";
 import { isValidReference, getRoot } from "mobx-state-tree";
 import { observer } from "mobx-react";
 import { ArrowLeftOutlined, ArrowRightOutlined, SwapOutlined, MoreOutlined, DeleteOutlined } from "@ant-design/icons";
@@ -128,7 +128,8 @@ export default observer(({ store }) => {
 
   return (
     <Fragment>
-      <Divider dashed orientation="left">
+      {/* override LS styles' height */}
+      <Divider dashed orientation="left" style={{ height: "auto" }}>
         Relations ({relations.length})
       </Divider>
       {!relations.length && <p>No Relations added yet</p>}

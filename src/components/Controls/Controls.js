@@ -21,7 +21,7 @@ export default inject("store")(
 
     const { userGenerate, sentUserGenerate } = item;
     const { enableHotkeys, enableTooltips } = store.settings;
-    const { interval, useQuartile, selectedQ } = store.completionStore.selected;
+    const { interval, filterType, selectedQ } = store.completionStore.selected;
     const { hasMap } = store.completionStore.selected.regionStore;
 
     /**
@@ -157,24 +157,31 @@ export default inject("store")(
         boxFilter = (
           <div>
             <div style={{ marginBottom: "10px" }}>
-              <Radio.Group defaultValue={useQuartile ? "quart" : "score"} buttonStyle="solid">
+              <Radio.Group defaultValue={filterType} buttonStyle="solid">
                 <Radio.Button
-                  value="quart"
+                  value="Quantile"
                   onChange={store.updateFilterOpt}
                   style={{ height: "25px", lineHeight: "20px" }}
                 >
                   Quartile
                 </Radio.Button>
                 <Radio.Button
-                  value="score"
+                  value="Score"
                   onChange={store.updateFilterOpt}
                   style={{ height: "25px", lineHeight: "20px" }}
                 >
                   Score
                 </Radio.Button>
+                <Radio.Button
+                  value="Class"
+                  onChange={store.updateFilterOpt}
+                  style={{ height: "25px", lineHeight: "20px" }}
+                >
+                  Class
+                </Radio.Button>
               </Radio.Group>
             </div>
-            <div>{useQuartile ? QuartBtns : slider}</div>
+            <div>{filterType === "Quantile" ? QuartBtns : filterType === "Score" ? slider : null}</div>
           </div>
         );
 

@@ -35,7 +35,7 @@ const Completion = types
     // Boxes filtering
     interval: types.optional(types.array(types.number), [0, 100]),
     selectedQ: types.optional(types.array(types.number), [1, 1, 1, 1]),
-    useQuartile: types.optional(types.boolean, false),
+    filterType: types.optional(types.string, "Score"),
 
     //
     userGenerate: types.optional(types.boolean, true),
@@ -401,10 +401,12 @@ const Completion = types
       });
 
       self.regionStore.unselectAll();
-      if (self.useQuartile) {
+      if (self.filterType === "Quantile") {
         self.regionStore.quartileVisible(self.selectedQ);
-      } else {
+      } else if (self.filterType === "Score") {
         self.regionStore.labelVisible(self.interval);
+      } else {
+        self.regionStore.resetVisible();
       }
     },
   }));

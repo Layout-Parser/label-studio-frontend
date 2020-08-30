@@ -220,7 +220,7 @@ const HtxLabelView = inject("store")(
       ) : null;
 
     return (
-      <p>
+      <div>
         {checkboxes}
         <Tag
           onClick={ev => {
@@ -238,7 +238,7 @@ const HtxLabelView = inject("store")(
             store.settings.enableHotkeys &&
             item.hotkey && <Hint>[{item.hotkey}]</Hint>}
         </Tag>
-      </p>
+      </div>
     );
   }),
 );

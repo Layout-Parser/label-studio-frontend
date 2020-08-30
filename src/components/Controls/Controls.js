@@ -21,7 +21,7 @@ export default inject("store")(
 
     const { userGenerate, sentUserGenerate } = item;
     const { enableHotkeys, enableTooltips } = store.settings;
-    const { interval, filterType, selectedQ } = store.completionStore.selected;
+    const { interval, filterType, selectedQ, doubleChecked } = store.completionStore.selected;
     const { hasMap } = store.completionStore.selected.regionStore;
 
     /**
@@ -46,6 +46,7 @@ export default inject("store")(
     let submitButton;
     let boxFilter;
     let shiftColor;
+    let doubleCheck;
 
     /**
      * Check for Predict Menu
@@ -91,6 +92,20 @@ export default inject("store")(
         );
       }
 
+      if ((userGenerate && sentUserGenerate) || (!userGenerate && store.hasInterface("update"))) {
+        doubleCheck = (
+          <Checkbox
+            defaultChecked={doubleChecked}
+            style={{ paddingLeft: "15px" }}
+            onChange={ev => {
+              store.toggleDoubleCheck(ev);
+            }}
+          >
+            Double Checked
+          </Checkbox>
+        );
+      }
+
       function formatter(value) {
         return `${value}%`;
       }
@@ -104,7 +119,7 @@ export default inject("store")(
             step={0.01}
             tipFormatter={formatter}
             defaultValue={interval ? interval : [0, 100]}
-            style={{ width: "200px", marginTop: "25px" }}
+            style={{ width: "180px", marginTop: "25px" }}
             onChange={store.updateVisibility}
           />
         );
@@ -187,7 +202,7 @@ export default inject("store")(
 
         shiftColor = (
           <Checkbox onChange={store.shiftBoxesColor} checked={hasMap}>
-            Shift Color of Detected Objects
+            Shift Color
           </Checkbox>
         );
       }
@@ -200,6 +215,7 @@ export default inject("store")(
           <div className={styles.container}>
             {skipButton}
             {updateButton}
+            {doubleCheck}
             {submitButton}
           </div>
           {boxFilter}

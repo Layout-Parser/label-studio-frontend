@@ -456,6 +456,11 @@ export default types
       currCompletion.regionStore.classVisible(event.target.checked, item.value);
     }
 
+    function toggleDoubleCheck(event) {
+      const currCompletion = self.completionStore.selected;
+      currCompletion.doubleChecked = event.target.checked;
+    }
+
     return {
       setFlags,
       addInterface,
@@ -479,5 +484,6 @@ export default types
       updateClass,
 
       shiftBoxesColor,
+      toggleDoubleCheck,
     };
   });

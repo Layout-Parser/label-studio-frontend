@@ -37,7 +37,10 @@ const Completion = types
     selectedQ: types.optional(types.array(types.number), [1, 1, 1, 1]),
     filterType: types.optional(types.string, "Score"),
 
-    //
+    // IMPORTANT: Based on the assumption that task completion is one to one
+    doubleChecked: types.optional(types.boolean, false),
+    // IMPORTANT
+
     userGenerate: types.optional(types.boolean, true),
     update: types.optional(types.boolean, false),
     sentUserGenerate: types.optional(types.boolean, false),

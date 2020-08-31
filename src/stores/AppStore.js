@@ -461,6 +461,11 @@ export default types
       currCompletion.doubleChecked = event.target.checked;
     }
 
+    function updateComment(comment) {
+      const currCompletion = self.completionStore.selected;
+      currCompletion.comment = comment;
+    }
+
     return {
       setFlags,
       addInterface,
@@ -482,6 +487,7 @@ export default types
       updateFilterOpt,
       updateQuartile,
       updateClass,
+      updateComment,
 
       shiftBoxesColor,
       toggleDoubleCheck,

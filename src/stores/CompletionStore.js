@@ -41,6 +41,8 @@ const Completion = types
     doubleChecked: types.optional(types.boolean, false),
     // IMPORTANT
 
+    comment: types.optional(types.string, ""),
+
     userGenerate: types.optional(types.boolean, true),
     update: types.optional(types.boolean, false),
     sentUserGenerate: types.optional(types.boolean, false),

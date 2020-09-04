@@ -35,9 +35,14 @@ const Completion = types
     // Boxes filtering
     interval: types.optional(types.array(types.number), [0, 100]),
     selectedQ: types.optional(types.array(types.number), [1, 1, 1, 1]),
-    useQuartile: types.optional(types.boolean, false),
+    filterType: types.optional(types.string, "Score"),
 
-    //
+    // IMPORTANT: Based on the assumption that task completion is one to one
+    doubleChecked: types.optional(types.boolean, false),
+    // IMPORTANT
+
+    comment: types.optional(types.string, ""),
+
     userGenerate: types.optional(types.boolean, true),
     update: types.optional(types.boolean, false),
     sentUserGenerate: types.optional(types.boolean, false),
@@ -401,10 +406,12 @@ const Completion = types
       });
 
       self.regionStore.unselectAll();
-      if (self.useQuartile) {
+      if (self.filterType === "Quantile") {
         self.regionStore.quartileVisible(self.selectedQ);
-      } else {
+      } else if (self.filterType === "Score") {
         self.regionStore.labelVisible(self.interval);
+      } else {
+        self.regionStore.resetVisible();
       }
     },
   }));

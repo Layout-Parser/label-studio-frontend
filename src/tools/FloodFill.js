@@ -97,10 +97,6 @@ const _Tool = types
     },
   }));
 
-const FloodFill = types.compose(
-  ToolMixin,
-  _Tool,
-  BaseTool,
-);
+const FloodFill = types.compose(ToolMixin, _Tool, BaseTool);
 
 export { FloodFill };

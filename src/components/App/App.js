@@ -19,6 +19,7 @@ import Controls from "../Controls/Controls";
 import Debug from "../Debug";
 import Panel from "../Panel/Panel";
 import Predictions from "../Predictions/Predictions";
+import Comments from "../Comments/Comments";
 import Segment from "../Segment/Segment";
 import Settings from "../Settings/Settings";
 import SideColumn from "../SideColumn/SideColumn";
@@ -135,6 +136,7 @@ const App = inject("store")(
                   <div className={stMenu + " ls-menu"}>
                     {store.hasInterface("completions:menu") && <Completions store={store} />}
                     {store.hasInterface("predictions:menu") && <Predictions store={store} />}
+                    <Comments store={store} />
                     {store.hasInterface("side-column") && !cs.viewingAllCompletions && !cs.viewingAllPredictions && (
                       <SideColumn store={store} />
                     )}

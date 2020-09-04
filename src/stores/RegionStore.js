@@ -373,4 +373,22 @@ export default types
         self.colorMap.clear();
       }
     },
+
+    classVisible(check, objClass) {
+      self.regions.forEach(r => {
+        if (r.labelsState.selectedValues()[0] === objClass) {
+          if (check) {
+            r.hidden = false;
+          } else {
+            r.hidden = true;
+          }
+        }
+      });
+    },
+
+    resetVisible() {
+      self.regions.forEach(r => {
+        r.hidden = false;
+      });
+    },
   }));

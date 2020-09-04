@@ -1,6 +1,6 @@
 import ColorScheme from "pleasejs";
 import React from "react";
-import { Tag } from "antd";
+import { Tag, Checkbox } from "antd";
 import { getRoot, types } from "mobx-state-tree";
 import { observer, inject } from "mobx-react";
 
@@ -208,23 +208,37 @@ const HtxLabelView = inject("store")(
       labelStyle["display"] = "none";
     }
 
+    let filterType = store.completionStore.selected.filterType;
+    let checkboxes =
+      filterType === "Class" ? (
+        <Checkbox
+          defaultChecked
+          onChange={e => {
+            store.updateClass(e, item);
+          }}
+        ></Checkbox>
+      ) : null;
+
     return (
-      <Tag
-        onClick={ev => {
-          item.toggleSelected();
-          return false;
-        }}
-        style={labelStyle}
-        size={item.size}
-      >
-        {item._value}
-        {item.showalias === true && item.alias && (
-          <span style={Utils.styleToProp(item.aliasstyle)}>&nbsp;{item.alias}</span>
-        )}
-        {(store.settings.enableTooltips || store.settings.enableLabelTooltips) &&
-          store.settings.enableHotkeys &&
-          item.hotkey && <Hint>[{item.hotkey}]</Hint>}
-      </Tag>
+      <div>
+        {checkboxes}
+        <Tag
+          onClick={ev => {
+            item.toggleSelected();
+            return false;
+          }}
+          style={labelStyle}
+          size={item.size}
+        >
+          {item._value}
+          {item.showalias === true && item.alias && (
+            <span style={Utils.styleToProp(item.aliasstyle)}>&nbsp;{item.alias}</span>
+          )}
+          {(store.settings.enableTooltips || store.settings.enableLabelTooltips) &&
+            store.settings.enableHotkeys &&
+            item.hotkey && <Hint>[{item.hotkey}]</Hint>}
+        </Tag>
+      </div>
     );
   }),
 );

@@ -397,13 +397,15 @@ export default types
     // Update the mode of filtering labels (i.e. score/quartile)
     function updateFilterOpt(e) {
       const currCompletion = self.completionStore.selected;
-      currCompletion.useQuartile = e.target.value === "quart";
-      if (e.target.value === "quart") {
+      currCompletion.filterType = e.target.value;
+      if (e.target.value === "Quantile") {
         currCompletion.selectedQ = [1, 1, 1, 1];
         currCompletion.regionStore.quartileVisible([1, 1, 1, 1]);
-      } else {
+      } else if (e.target.value === "Score") {
         currCompletion.interval = [0, 100];
         currCompletion.regionStore.labelVisible([0, 100]);
+      } else {
+        currCompletion.regionStore.resetVisible();
       }
     }
 
@@ -449,6 +451,21 @@ export default types
       currCompletion.regionStore.shiftColor(event.target.checked);
     }
 
+    function updateClass(event, item) {
+      const currCompletion = self.completionStore.selected;
+      currCompletion.regionStore.classVisible(event.target.checked, item.value);
+    }
+
+    function toggleDoubleCheck(event) {
+      const currCompletion = self.completionStore.selected;
+      currCompletion.doubleChecked = event.target.checked;
+    }
+
+    function updateComment(comment) {
+      const currCompletion = self.completionStore.selected;
+      currCompletion.comment = comment;
+    }
+
     return {
       setFlags,
       addInterface,
@@ -469,7 +486,10 @@ export default types
       updateVisibility,
       updateFilterOpt,
       updateQuartile,
+      updateClass,
+      updateComment,
 
       shiftBoxesColor,
+      toggleDoubleCheck,
     };
   });

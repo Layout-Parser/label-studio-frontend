@@ -27,31 +27,28 @@ class Comments extends Component {
     this.setState({ comment: value });
   };
 
-  test = () => {
-    console.log("aha");
-  };
-
   parse = comment => {
     let { regions } = this.props.store.completionStore.selected.regionStore;
-    let ids = regions.map(region => region.id);
+    let pids = regions.map(region => region.pid);
     let colors = regions.map(region => region.fillColor);
     let res = [];
     let tokens = comment.split(" ");
     tokens.forEach(token => {
       if (token[0] !== "@") {
         res.push(token + " ");
-      } else if (!ids.includes(token.substring(1))) {
+      } else if (!pids.includes(token.substring(1))) {
         res.push(token + " ");
       } else {
         res.push(
           <Tag
+            style={{ marginBottom: 5 }}
             onClick={e => {
               const idx = regions.findIndex(r => r.selected);
               if (idx !== -1 && regions.length >= 2) regions[idx].unselectRegion();
-              const region = regions.filter(region => region.id === token.substring(1))[0];
+              const region = regions.filter(region => region.pid === token.substring(1))[0];
               region.selectRegion();
             }}
-            color={colors[ids.indexOf(token.substring(1))]}
+            color={colors[pids.indexOf(token.substring(1))]}
           >
             {token}
           </Tag>,

@@ -60,7 +60,7 @@ export default observer(({ store, completion }) => {
   return (
     <Fragment>
       <p className={styles.row}>
-        <NodeMinimal node={node} /> (id: {node.id}){" "}
+        <NodeMinimal node={node} /> (id: {node.pid}){" "}
         {!node.editable && <Badge count={"readonly"} style={{ backgroundColor: "#ccc" }} />}
       </p>
       <div className={styles.statesblk + " ls-entity-states"}>

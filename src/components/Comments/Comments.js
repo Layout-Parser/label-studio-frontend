@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Card, Input } from "antd";
+import { Card, Input, Tag } from "antd";
 import { observer } from "mobx-react";
 
 import styles from "../Completions/Completions.module.scss";
@@ -27,6 +27,40 @@ class Comments extends Component {
     this.setState({ comment: value });
   };
 
+  test = () => {
+    console.log("aha");
+  };
+
+  parse = comment => {
+    let { regions } = this.props.store.completionStore.selected.regionStore;
+    let ids = regions.map(region => region.id);
+    let colors = regions.map(region => region.fillColor);
+    let res = [];
+    let tokens = comment.split(" ");
+    tokens.forEach(token => {
+      if (token[0] !== "@") {
+        res.push(token + " ");
+      } else if (!ids.includes(token.substring(1))) {
+        res.push(token + " ");
+      } else {
+        res.push(
+          <Tag
+            onClick={e => {
+              const idx = regions.findIndex(r => r.selected);
+              if (idx !== -1 && regions.length >= 2) regions[idx].unselectRegion();
+              const region = regions.filter(region => region.id === token.substring(1))[0];
+              region.selectRegion();
+            }}
+            color={colors[ids.indexOf(token.substring(1))]}
+          >
+            {token}
+          </Tag>,
+        );
+      }
+    });
+    return res;
+  };
+
   render() {
     const { store } = this.props;
     const { comment } = store.completionStore.selected;
@@ -47,7 +81,7 @@ class Comments extends Component {
 
     let readOnlyComment = (
       <div style={{ padding: "5px 12px", minHeight: 50, maxHeight: 200 }}>
-        <span style={{ overflow: "auto", display: "block", maxHeight: 190 }}>{comment}</span>
+        <span style={{ overflow: "auto", display: "block", maxHeight: 190 }}>{this.parse(comment)}</span>
       </div>
     );
 
